@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificação de Acesso</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    color: #fff;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+    transition: all 0.3s ease;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    outline: none;
+    text-align: center;
+    font-size: 1rem;
+  }
+
+  button {
+    background: #fff;
+    color: #1976d2;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #f1f1f1;
+  }
+
+  #mensagem {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+  #sistema {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #sistema h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="card" id="login">
+    <h1>Verificação de Acesso</h1>
+    <input type="email" id="email" placeholder="Digite seu e-mail" required>
+    <button onclick="verificarAcesso()">Entrar</button>
+    <p id="mensagem"></p>
+  </div>
+
+  <div id="sistema">
+    <h2>✅ Acesso Liberado</h2>
+    <p>Bem-vindo ao sistema! Seu e-mail foi verificado com sucesso.</p>
+  </div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbz9D3VlRbDtfA9wtdnDGS3Pc6ete0YhiAa_T2q8n7VLTo1SlHzX_GORT_G9iiEFY2eacg/exec";
+
+async function verificarAcesso() {
+  const email = document.getElementById("email").value.trim();
+  const mensagem = document.getElementById("mensagem");
+
+  if (!email) {
+    mensagem.textContent = "Por favor, digite seu e-mail.";
+    mensagem.style.color = "yellow";
+    return;
+  }
+
+  mensagem.textContent = "Verificando...";
+  mensagem.style.color = "white";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    if (data.autorizado) {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("sistema").style.display = "flex";
+    } else {
+      mensagem.textContent = "❌ Acesso negado! E-mail não autorizado.";
+      mensagem.style.color = "red";
+    }
+  } catch (error) {
+    mensagem.textContent = "Erro ao conectar com o servidor.";
+    mensagem.style.color = "orange";
+  }
+}
+</script>
+</body>
+</html>
