@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verificação de Acesso</title>
+<title>Sistema de Acesso e Snippets</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -24,13 +24,12 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     text-align: center;
     width: 90%;
-    max-width: 350px;
-    transition: all 0.3s ease;
+    max-width: 380px;
+    transition: opacity 0.4s ease;
   }
 
-  h1 {
+  h1, h2 {
     margin-bottom: 20px;
-    font-size: 1.5rem;
   }
 
   input {
@@ -48,16 +47,17 @@
     background: #fff;
     color: #1976d2;
     border: none;
-    padding: 12px 20px;
+    padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
     font-size: 1rem;
     transition: 0.3s;
+    margin: 5px;
   }
 
   button:hover {
-    background: #f1f1f1;
+    background: #e3f2fd;
   }
 
   #mensagem {
@@ -65,19 +65,65 @@
     font-weight: bold;
   }
 
-  #sistema {
+  #painel {
     display: none;
     flex-direction: column;
     align-items: center;
+    width: 90%;
+    max-width: 800px;
   }
 
-  #sistema h2 {
-    font-size: 1.8rem;
-    margin-bottom: 10px;
+  .snippets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    width: 100%;
+  }
+
+  .snippet {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+    text-align: left;
+  }
+
+  .snippet:hover {
+    transform: scale(1.03);
+  }
+
+  .snippet h3 {
+    margin-top: 0;
+    color: #fff;
+  }
+
+  .snippet pre {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 10px;
+    overflow-x: auto;
+    color: #e0f7fa;
+    font-size: 0.9rem;
+  }
+
+  .link {
+    color: #fff;
+    text-decoration: underline;
+    font-size: 0.9rem;
+  }
+
+  #topo {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
   }
 </style>
 </head>
 <body>
+  <!-- Login -->
   <div class="card" id="login">
     <h1>Verificação de Acesso</h1>
     <input type="email" id="email" placeholder="Digite seu e-mail" required>
@@ -85,14 +131,28 @@
     <p id="mensagem"></p>
   </div>
 
-  <div id="sistema">
-    <h2>✅ Acesso Liberado</h2>
-    <p>Bem-vindo ao sistema! Seu e-mail foi verificado com sucesso.</p>
+  <!-- Painel -->
+  <div id="painel" class="card">
+    <div id="topo">
+      <h2>📁 Meus Snippets</h2>
+      <button onclick="sair()">Sair</button>
+    </div>
+
+    <div class="snippets" id="listaSnippets"></div>
+
+    <button onclick="adicionarSnippet()">➕ Novo Snippet</button>
   </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbz9D3VlRbDtfA9wtdnDGS3Pc6ete0YhiAa_T2q8n7VLTo1SlHzX_GORT_G9iiEFY2eacg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx_e_IOJtXrF7KuY8kYlquWAdZeDlcy4BhIff_omYizjKZaWOQhEY4zsuYajYfNqljtVQ/exec";
 
+// Carregar sessão salva
+window.onload = () => {
+  const usuario = localStorage.getItem("usuarioAutorizado");
+  if (usuario) mostrarPainel();
+};
+
+// Verificação de acesso
 async function verificarAcesso() {
   const email = document.getElementById("email").value.trim();
   const mensagem = document.getElementById("mensagem");
@@ -116,15 +176,79 @@ async function verificarAcesso() {
     const data = await response.json();
 
     if (data.autorizado) {
-      document.getElementById("login").style.display = "none";
-      document.getElementById("sistema").style.display = "flex";
+      localStorage.setItem("usuarioAutorizado", email);
+      mostrarPainel();
     } else {
       mensagem.textContent = "❌ Acesso negado! E-mail não autorizado.";
       mensagem.style.color = "red";
     }
-  } catch (error) {
+  } catch {
     mensagem.textContent = "Erro ao conectar com o servidor.";
     mensagem.style.color = "orange";
+  }
+}
+
+// Mostrar painel
+function mostrarPainel() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("painel").style.display = "flex";
+  carregarSnippets();
+}
+
+// Sair
+function sair() {
+  localStorage.removeItem("usuarioAutorizado");
+  document.getElementById("painel").style.display = "none";
+  document.getElementById("login").style.display = "block";
+}
+
+// Banco de dados local (simples)
+let snippets = JSON.parse(localStorage.getItem("snippets") || "[]");
+
+// Carregar lista
+function carregarSnippets() {
+  const lista = document.getElementById("listaSnippets");
+  lista.innerHTML = "";
+  if (snippets.length === 0) {
+    lista.innerHTML = "<p>Nenhum snippet salvo ainda.</p>";
+    return;
+  }
+
+  snippets.forEach((s, i) => {
+    lista.innerHTML += `
+      <div class="snippet">
+        <h3>${s.titulo}</h3>
+        <p><a href="${s.link}" target="_blank" class="link">🌐 Abrir link</a></p>
+        <p><b>HTML:</b></p>
+        <pre>${s.html}</pre>
+        <p><b>Apps Script:</b></p>
+        <pre>${s.script}</pre>
+        <button onclick="excluirSnippet(${i})">🗑️ Excluir</button>
+      </div>
+    `;
+  });
+}
+
+// Adicionar novo snippet
+function adicionarSnippet() {
+  const titulo = prompt("Título do snippet:");
+  if (!titulo) return;
+
+  const link = prompt("Cole o link de acesso:");
+  const html = prompt("Cole o código HTML:");
+  const script = prompt("Cole o código Apps Script:");
+
+  snippets.push({ titulo, link, html, script });
+  localStorage.setItem("snippets", JSON.stringify(snippets));
+  carregarSnippets();
+}
+
+// Excluir
+function excluirSnippet(i) {
+  if (confirm("Deseja excluir este snippet?")) {
+    snippets.splice(i, 1);
+    localStorage.setItem("snippets", JSON.stringify(snippets));
+    carregarSnippets();
   }
 }
 </script>
